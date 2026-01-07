@@ -28,6 +28,7 @@ class Player:
     def receive_cards(self, cards: List[Card]) -> None:
         for card in cards:
             self.hand[card.card_number] = card
+        self.hand = dict(sorted(self.hand.items()))
 
     def choose_card_to_play(self, game_state: Dict[str, Any]) -> Card:
         card_to_play = self.strategy.choose_card_to_play(game_state)

@@ -9,13 +9,13 @@ from src.strategies import (
 
 if __name__ == "__main__":
     players = [
-        # Player(player_id=0, strategy=DescendingOrderStrategy()),
-        # Player(player_id=1, strategy=FullRandomStrategy()),
-        # Player(player_id=2, strategy=RandomCardStrategy()),
-        Player(player_id=3, strategy=HumanInputStrategy()),
+        Player(player_id=1, strategy=DescendingOrderStrategy()),
+        Player(player_id=2, strategy=FullRandomStrategy()),
+        Player(player_id=3, strategy=RandomCardStrategy()),
+        Player(player_id=4, strategy=HumanInputStrategy()),
     ]
     game = Game(
-        players = players,
+        players=players,
         amount_of_rounds=3,
         amount_of_piles=4,
         amount_of_cards_per_player=10,
