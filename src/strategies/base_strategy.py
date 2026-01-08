@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
-    from src.game.player import Player
     from src.game.cards import Card
+    from src.game.player import Player
 
 
 class BaseStrategy(ABC):
@@ -18,6 +18,9 @@ class BaseStrategy(ABC):
 
     @abstractmethod
     def choose_pile_to_replace(self, game_state: Dict[str, Any]) -> int:
+        pass
+
+    def update(self, state, action, reward, next_state, possible_actions):  # noqa: B027
         pass
 
     def show_per_pile_cards(self, game_state: Dict[str, Any]) -> None:

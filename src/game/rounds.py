@@ -1,15 +1,16 @@
-from typing import List, Optional, TYPE_CHECKING, Dict, Any
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 if TYPE_CHECKING:
-    from src.game.player import Player
     from src.game.cards import Card
+    from src.game.player import Player
 
 from src.game.cards import Deck
 
 
 class Game:
     # a round consists of n turns ,where n is the amount of cards per player
-    # each player puts down a card based on the current piles, the round number, and their strategy
+    # each player puts down a card based on the current piles, the round number,
+    # and their strategy
     # rules = lowest card goes first
     # if card is lower than any last card in a pile, they replace a pile and take the
     # minus points, if a card is higher than any last card in a pile, it goes on the
@@ -206,6 +207,19 @@ class Game:
             self.piles[chosen_pile_index] = [card]
 
     def play_turn(self) -> None:
+        current_personalised_game_states = {
+            player.player_id: self.provide_game_state_to_player().update(
+                {
+                    "player_hand": tuple(
+                        sorted(
+                            (card.card_number, card.card_points)
+                            for card in player.hand.values()
+                        )
+                    )
+                }
+            )
+            for player in self.players
+        }
         player_moves = self.get_player_card_choice()
         # process player moves and update piles accordingly
         print("\n--- player moves: ---")
@@ -243,11 +257,53 @@ class Game:
                 )
 
         # add code that reports what happened this turn
-        print("---New turn ---\n")
         self.get_players_turn_score()
+        self.apply_updates_after_turn(
+            current_personalised_game_states,
+            player_moves,
+        )
+
+        print("---New turn ---\n")
+
+    def compute_player_rewards(self) -> Dict[int, int]:
+        rewards = {}
+        for player in self.players:
+            # negative reward for points collected this turn
+            rewards[player.player_id] = -player.turn_score
+        return rewards
+
+    def get_personalized_game_state_for_player(
+        self,
+        player: "Player",
+    ) -> Dict[str, Any]:
+        game_state = self.provide_game_state_to_player()
+        game_state["player_hand"] = tuple(
+            sorted((card.card_number, card.card_points) for card in player.hand.values())
+        )
+        return game_state
+
+    def apply_updates_after_turn(
+        self,
+        current_personalised_game_states: Dict[int, Dict[str, Any]],
+        _player_moves: Dict[int, Card],
+    ) -> None:
+        player_moves: Dict[int, Tuple[int, int]] = {
+            player_id: tuple(card.card_number, card.card_points)
+            for player_id, card in _player_moves.items()
+        }
+        per_player_reward = self.compute_player_rewards()
+        for player in self.players:
+            next_personalised_game_state = self.get_personalized_game_state_for_player(player)
+            player.strategy.update(
+                state=current_personalised_game_states[player.player_id],
+                action=player_moves[player.player_id],
+                reward=per_player_reward[player.player_id],
+                next_state=next_personalised_game_state,
+                possible_actions=list(player.hand.values()),
+            )
 
     def play_round(self) -> None:
-        for turn in range(self.amount_of_cards_per_player):
+        for _ in range(self.amount_of_cards_per_player):
             self.play_turn()
         # calculate scores for each player and store them in scores_per_player_per_round
         for player_index, player in enumerate(self.players):
@@ -266,6 +322,6 @@ class Game:
 
     def play_game(self) -> None:
         self.initialize_game()
-        for round_number in range(self.amount_of_rounds):
+        for _ in range(self.amount_of_rounds):
             self.play_round()
             self.reset_for_next_round()
